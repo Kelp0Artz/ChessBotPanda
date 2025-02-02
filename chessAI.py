@@ -259,7 +259,7 @@ class ChessDataset(Dataset, ChessEngine):
         self.weights = h5py.File(self.pathFile, 'r')['sampleWeightGroup']['sampleWeight']
         with h5py.File(self.pathFile, 'r') as file:
             self.num_games = file.attrs["numberOfGames"]
-        self.game_
+        
     
     def __len__(self):
         return self.num_games
@@ -268,6 +268,8 @@ class ChessDataset(Dataset, ChessEngine):
         with h5py.File(self.pathFile, 'r') as file:
             game_group = file['games'][f"game-{idx+1}"]
             moves = game_group['moves'][()]
+            scoreForWeight = game_group['averageElo'][()]
+            #configure moves
             moves = moves.decode('utf-8').split()
             #legal_moves
             legal_moves = self.findLegalMove(moves)
@@ -275,7 +277,7 @@ class ChessDataset(Dataset, ChessEngine):
             static_positions = self.get_states(moves)
         seq = self.encode_move(moves)
         target = []
-        return [seq, target],[static_positions], legal_moves
+        return seq, static_positions, legal_moves, scoreForWeight, target
     
 class CHESSBot(nn.Module):
     def __init__(self): 
@@ -285,9 +287,8 @@ class CHESSBot(nn.Module):
         self.conv1 = nn.Conv2d(8, 16, 3, padding=1)
         self.conv2 = nn.Conv2d(16, 32, 3, padding=1)
 
-        self.fc1 = nn.Linear(32 * 8 * 8 + 24, 128)
-        self.fc2 = nn.Linear(128, 8*8*8)
-        self.fc3 = nn.Linear(8*8*8, 4116)
+        self.fc1 = nn.Linear(32 * 8 * 8 + 24, 3072)
+        self.fc2 = nn.Linear(3072, 4116)
 
     def forward(self, seq, board_state):
 
@@ -301,18 +302,44 @@ class CHESSBot(nn.Module):
         x = torch.cat([cnn_out, lstm_out], dim=1)
 
         x = nn.ReLU()(self.fc1(x))
-        x = nn.ReLU()(self.fc2(x))
-        x = self.fc3(x)
+        x = self.fc2(x)
         
         return x
+    
+### CHECKPOINT FUNCTION add into training loop
+def save_checkpoint(model, optimizer, epoch, loss, path):
+    torch.save({
+        'epoch': epoch,
+        'model_state_dict': model.state_dict(),
+        'optimizer_state_dict': optimizer.state_dict(),
+        'loss': loss,
+    }, path)
+    print(f"Model saved at {path} /n Epoch: {epoch} /n Loss: {loss}")
+
+def load_checkpoint(model, optimizer, path):
+    checkpoint = torch.load(path)
+    model.load_state_dict(checkpoint['model_state_dict'])
+    optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+    epoch = checkpoint['epoch']
+    loss = checkpoint['loss']
+    print(f"Model loaded from {path} /n Epoch: {epoch} /n Loss: {loss}")
+    return model, optimizer
 
 
+#DATASET
+pathToDataset = 'Dataset\original\lichess_db_standard_rated_2013-01.h5'
 
+dataset = ChessDataset(pathToDataset)
+
+dataloader = DataLoader(dataset, batch_size=512, shuffle=True) #Rework for batch size, bc every game
 
 #SETTINGS
 model = CHESSBot().to(device)
 criterion = nn.CrossEntropyLoss(reduction="none")
 optimizer = optim.Adam(model.parameters(), lr=0.001)
+scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.5) #Update step_size(epochs num) and gamma
+# MAYBE TRY THIS scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, factor=0.1, patience=5)
+
 
 #TEST
 input_size = 10   
@@ -328,11 +355,14 @@ def get_weights():
 weights = get_weights()
 
 for epoch in range(epochs):  
-    predictions = model(data)
-    loss = criterion(predictions, target).to(device)
-    weighted_loss = (loss * weights[weight]).mean()
-    loss.backward()  
-    optimizer.step()   
-    optimizer.zero_grad()    
+    for batch in dataloader:
+        seq, static_positions, legal_moves, scoreForWeight,  target = batch
+        predictions = model(seq, static_positions).to(device)
 
-    print(f"Epoch {epoch + 1}, Loss: {loss.item()}")
+        loss = criterion(predictions, target).to(device)
+        weighted_loss = (loss * weights[scoreForWeight]).mean()
+        loss.backward()  
+        optimizer.step()   
+        optimizer.zero_grad()    
+
+        print(f"Epoch {epoch + 1}, Loss: {loss.item()}")

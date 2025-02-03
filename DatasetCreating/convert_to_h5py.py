@@ -26,6 +26,7 @@ class ChessEngine():
         
         with h5py.File(outputFilePath, 'w') as file:
             countGame = 1
+            countMoves = 0
             file.attrs['name'] = 'Chess Dataset'
             Additional = file.create_group('sampleWeightGroup')
             Additional.create_dataset('sampleWeight', data=array)
@@ -43,11 +44,14 @@ class ChessEngine():
                         game_group.attrs['whiteWon'] = whiteWon
                         game_group.create_dataset('moves', data=moves)
                         print(f'Game {countGame} has been added')
+                        
+                        countMoves += len(moves.split())
                         countGame += 1
 
             file.attrs['numberOfGames'] = countGame
+            file.attrs['numberOfMoves'] = countMoves
 
 Engine = ChessEngine()
-Engine.convert_to_h5py('Dataset/original/lichess_db_standard_rated_2013-01_result_0_1.csv', 'Dataset/original/lichess_db_standard_rated_2013-01.h5')
+Engine.convert_to_h5py('Dataset/lichess_db_standard_rated_2013-01_result_0_1.csv', 'Dataset/lichess_db_standard_rated_2013-01.h5')
 
 

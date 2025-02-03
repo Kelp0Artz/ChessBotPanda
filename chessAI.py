@@ -257,8 +257,10 @@ class ChessDataset(Dataset, ChessEngine):
         self.pathFile = pathFile
         self.games = h5py.File(self.pathFile, 'r')['games']
         self.weights = h5py.File(self.pathFile, 'r')['sampleWeightGroup']['sampleWeight']
-        with h5py.File(self.pathFile, 'r') as file:
+        self.current_data_position = [0, 0]
+        with h5py.File(self.pathFile, 'r') as file: #rework add every move!!!!
             self.num_games = file.attrs["numberOfGames"]
+            
         
     
     def __len__(self):
@@ -357,12 +359,16 @@ weights = get_weights()
 for epoch in range(epochs):  
     for batch in dataloader:
         seq, static_positions, legal_moves, scoreForWeight,  target = batch
+        seq, static_positions, target = seq.to(device), static_positions.to(device), target.to(device)
+
         predictions = model(seq, static_positions).to(device)
 
         loss = criterion(predictions, target).to(device)
         weighted_loss = (loss * weights[scoreForWeight]).mean()
-        loss.backward()  
+
+        weighted_loss.backward()  
         optimizer.step()   
+
         optimizer.zero_grad()    
 
         print(f"Epoch {epoch + 1}, Loss: {loss.item()}")

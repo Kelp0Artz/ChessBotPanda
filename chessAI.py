@@ -2,7 +2,8 @@ import torch
 from torch import nn
 import torch.optim as optim
 from torch.utils.data import Dataset, DataLoader
-import matplotlib.pyplot as plt
+from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence
+import torch.nn.functional as F
 import h5py
 import chess
 import numpy as np
@@ -253,32 +254,38 @@ class ChessEngine():
     
 class ChessDataset(Dataset, ChessEngine):
     def __init__(self, pathFile):
+        """
+        current_data_position: [game, move in game]
+        Saves the current position of the data, for the next iteration.
+        """
         super().__init__()
         self.pathFile = pathFile
         self.games = h5py.File(self.pathFile, 'r')['games']
         self.weights = h5py.File(self.pathFile, 'r')['sampleWeightGroup']['sampleWeight']
-        self.current_data_position = [0, 0]
-        with h5py.File(self.pathFile, 'r') as file: #rework add every move!!!!
+        self.current_data_position = [1, 0] #game, move in game
+        self.current_serie_moves = self.games[f"game-{self.current_data_position[0]}"]['moves'][()].decode('utf-8').split()
+
+        with h5py.File(self.pathFile, 'r') as file: 
             self.num_games = file.attrs["numberOfGames"]
-            
-        
-    
+            self.num_moves = file.attrs["numberOfMoves"]
+
     def __len__(self):
-        return self.num_games
+        return self.num_moves
     
     def __getitem__(self, idx):
         with h5py.File(self.pathFile, 'r') as file:
             game_group = file['games'][f"game-{idx+1}"]
-            moves = game_group['moves'][()]
+            move = self.current_serie_moves[self.current_data_position[1]]
+            moves_played = self.current_serie_moves[0:self.current_data_position[1]]
             scoreForWeight = game_group['averageElo'][()]
-            #configure moves
-            moves = moves.decode('utf-8').split()
+
             #legal_moves
-            legal_moves = self.findLegalMove(moves)
+            legal_moves = self.findLegalMove(moves_played)
             #static_postions
-            static_positions = self.get_states(moves)
-        seq = self.encode_move(moves)
-        target = []
+            static_positions = self.get_states(moves_played)
+            
+        seq = self.encode_move(moves_played)
+        self.current_data_position[1] += 1
         return seq, static_positions, legal_moves, scoreForWeight, target
     
 class CHESSBot(nn.Module):
@@ -292,20 +299,33 @@ class CHESSBot(nn.Module):
         self.fc1 = nn.Linear(32 * 8 * 8 + 24, 3072)
         self.fc2 = nn.Linear(3072, 4116)
 
-    def forward(self, seq, board_state):
-
+    def forward(self, seq, board_state, seq_length=None, temperature:float=1.0):
+        """
+        seq: [batch_size, seq_len, 4]
+        board_state: [batch_size, 8, 8, 8]
+        temperature: Controls randomness of the output selcted by model
+        """
         cnn_out = nn.ReLU()(self.conv1(board_state))
         cnn_out = nn.ReLU()(self.conv2(cnn_out))
         cnn_out = cnn_out.view(cnn_out.size(0), -1)
 
-        lstm_out, _ = self.lstm(seq)
+        if seq_length is not None:
+            seq_packed = pack_padded_sequence(seq, seq_length.cpu(), batch_first=True, enforce_sorted=False)
+            lstm_out, _ = self.lstm(seq_packed)
+            lstm_out, _ = pad_packed_sequence(lstm_out, batch_first=True)
+        else:
+            lstm_out, _ = self.lstm(seq)
+
         lstm_out = lstm_out[:, -1, :]
         
         x = torch.cat([cnn_out, lstm_out], dim=1)
-
-        x = nn.ReLU()(self.fc1(x))
+        #Try F.relu maybe faster
+        x = F.relu()(self.fc1(x))
         x = self.fc2(x)
         
+        if temperature != 1.0:
+            x = x / temperature
+
         return x
     
 ### CHECKPOINT FUNCTION add into training loop

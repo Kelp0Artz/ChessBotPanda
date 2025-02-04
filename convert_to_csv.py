@@ -48,7 +48,7 @@ def pgn_to_dataframe(pgn_file, limit_count=20_000_000):
 
             games.append(game)
 
-            if len(games) >= 4000:  
+            if len(games) >= 6000:  
                 results = pool.map(process_game, games)  
                 games = []
                 results = [result for result in results if result is not None]
@@ -76,7 +76,7 @@ def pgn_to_dataframe(pgn_file, limit_count=20_000_000):
     pool.join()
 
 def main():
-    files = ['Dataset/original/lichess_db_standard_rated_2024-12.pgn']
+    files = ['Dataset/lichess_db_standard_rated_2017-01.pgn']
     for file in files:
         print(f"Processing file: {file}") 
         file_name, _ = os.path.splitext(file)

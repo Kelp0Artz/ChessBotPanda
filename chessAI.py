@@ -30,8 +30,8 @@ class ChessEngine():
     }
     """
     def __init__(self):
-        #self.board = np.zeros((8,8,8))  #8x8xpiece(6)+color(2) = 512
-        self.board = np.array((
+        
+        self.initial_board= np.array((
             [[0, 1, 0, 0, 0, 0, 1, 0],
             [0, 0, 1, 0, 0, 0, 1, 0],
             [0, 0, 0, 1, 0, 0, 1, 0],
@@ -103,7 +103,8 @@ class ChessEngine():
             [0, 0, 0, 1, 0, 0, 0, 1],
             [0, 0, 1, 0, 0, 0, 0, 1],
             [0, 1, 0, 0, 0, 0, 0, 1]]
-            ))     
+            ))    
+        self.board = self.initial_board.copy() 
         self.promotions =  {
             "r": 2,
             "n": 3,
@@ -122,79 +123,7 @@ class ChessEngine():
         }
     
     def board_reset(self):
-        self.board = np.array((
-            [[0, 1, 0, 0, 0, 0, 1, 0],
-            [0, 0, 1, 0, 0, 0, 1, 0],
-            [0, 0, 0, 1, 0, 0, 1, 0],
-            [0, 0, 0, 0, 0, 1, 1, 0],
-            [0, 0, 0, 0, 1, 0, 1, 0],
-            [0, 0, 0, 1, 0, 0, 1, 0],
-            [0, 0, 1, 0, 0, 0, 1, 0],
-            [0, 1, 0, 0, 0, 0, 1, 0]],
-
-            [[1, 0, 0, 0, 0, 0, 1, 0],
-            [1, 0, 0, 0, 0, 0, 1, 0],
-            [1, 0, 0, 0, 0, 0, 1, 0],
-            [1, 0, 0, 0, 0, 0, 1, 0],
-            [1, 0, 0, 0, 0, 0, 1, 0],
-            [1, 0, 0, 0, 0, 0, 1, 0],
-            [1, 0, 0, 0, 0, 0, 1, 0],
-            [1, 0, 0, 0, 0, 0, 1, 0]],
-
-            [[0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0]],
-
-            [[0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0]],
-
-            [[0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0]],
-
-            [[0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0]],
-
-            [[1, 0, 0, 0, 0, 0, 0, 1],
-            [1, 0, 0, 0, 0, 0, 0, 1],
-            [1, 0, 0, 0, 0, 0, 0, 1],
-            [1, 0, 0, 0, 0, 0, 0, 1],
-            [1, 0, 0, 0, 0, 0, 0, 1],
-            [1, 0, 0, 0, 0, 0, 0, 1],
-            [1, 0, 0, 0, 0, 0, 0, 1],
-            [1, 0, 0, 0, 0, 0, 0, 1]],
-
-            [[0, 1, 0, 0, 0, 0, 0, 1],
-            [0, 0, 1, 0, 0, 0, 0, 1],
-            [0, 0, 0, 1, 0, 0, 0, 1],
-            [0, 0, 0, 0, 0, 1, 0, 1],
-            [0, 0, 0, 0, 1, 0, 0, 1],
-            [0, 0, 0, 1, 0, 0, 0, 1],
-            [0, 0, 1, 0, 0, 0, 0, 1],
-            [0, 1, 0, 0, 0, 0, 0, 1]]
-            ))
+        self.board = self.initial_board.copy()
         
     def move(self, value):
         SELECT = []
@@ -263,8 +192,8 @@ class ChessDataset(Dataset, ChessEngine):
         self.games = h5py.File(self.pathFile, 'r')['games']
         self.weights = h5py.File(self.pathFile, 'r')['sampleWeightGroup']['sampleWeight']
         self.current_data_position = [1, 0] #game, move in game
-        self.current_serie_moves = self.games[f"game-{self.current_data_position[0]}"]['moves'][()].decode('utf-8').split()
-
+        self.current_game_data = self.games[f"game-{self.current_data_position[0]}"]
+        self.current_game_moves_processed = self.current_game_data['moves'][()].decode('utf-8').split()
         with h5py.File(self.pathFile, 'r') as file: 
             self.num_games = file.attrs["numberOfGames"]
             self.num_moves = file.attrs["numberOfMoves"]
@@ -274,11 +203,15 @@ class ChessDataset(Dataset, ChessEngine):
     
     def __getitem__(self, idx):
         with h5py.File(self.pathFile, 'r') as file:
-            game_group = file['games'][f"game-{idx+1}"]
-            move = self.current_serie_moves[self.current_data_position[1]]
-            moves_played = self.current_serie_moves[0:self.current_data_position[1]]
+            game_group = file['games'][f"game-{self.current_data_position[0]}"]
+            try: 
+                target = self.current_game_moves_processed[self.current_data_position[1]]
+            except IndexError:
+                self.current_data_position[0] += 1
+                self.current_data_position[1] = 0
+                game_group = file['games'][f"game-{self.current_data_position[0]}"]
+            moves_played = self.current_game_moves_processed[0:self.current_data_position[1]]
             scoreForWeight = game_group['averageElo'][()]
-
             #legal_moves
             legal_moves = self.findLegalMove(moves_played)
             #static_postions

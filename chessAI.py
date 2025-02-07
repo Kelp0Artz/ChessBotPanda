@@ -11,6 +11,15 @@ import numpy as np
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print("Using device: ", device)
 
+"""
+Things to fix:
+- Fix piece promotions in ChessEngine class
+--> Optionaly, add 4 input nodes to the neural network
+- add tensorboard to the training loop
+- add checkpoint saving/loading
+- add maybe scheduler to the optimizer
+- completely rewrite ChessDataset feeding mechanism
+"""
 class ChessEngine():
     """
     Which one is A or B?
@@ -189,37 +198,53 @@ class ChessDataset(Dataset, ChessEngine):
         """
         super().__init__()
         self.pathFile = pathFile
-        self.games = h5py.File(self.pathFile, 'r')['games']
-        self.weights = h5py.File(self.pathFile, 'r')['sampleWeightGroup']['sampleWeight']
+        self.file = h5py.File(self.pathFile, 'r')
+        self.num_games = self.file.attrs["numberOfGames"][()]
+        self.num_moves = self.file.attrs["numberOfMoves"][()]
         self.current_data_position = [1, 0] #game, move in game
-        self.current_game_data = self.games[f"game-{self.current_data_position[0]}"]
-        self.current_game_moves_processed = self.current_game_data['moves'][()].decode('utf-8').split()
-        with h5py.File(self.pathFile, 'r') as file: 
-            self.num_games = file.attrs["numberOfGames"]
-            self.num_moves = file.attrs["numberOfMoves"]
+        self.current_data = self.file['games'][f"game-{self.current_data_position[0]}"]
+        self.current_moves_processed = self.current_data['moves'][()]
+    
+    def __del__(self):
+        if self.file is not None:
+            self.file.close()
+            self.file = None
 
     def __len__(self):
         return self.num_moves
+    
+    def load_game(self, game_idx):
+        """
+        Loads a game from the dataset
+        """
+        with h5py.File(self.pathFile, 'r') as file:
+            self.current_data = file['games'][f"game-{game_idx}"]
+            self.current_moves_processed = self.current_data['moves'][()]
+        
     
     def __getitem__(self, idx):
         with h5py.File(self.pathFile, 'r') as file:
             game_group = file['games'][f"game-{self.current_data_position[0]}"]
             try: 
-                target = self.current_game_moves_processed[self.current_data_position[1]]
-            except IndexError:
+                target = self.current_moves_processed[self.current_data_position[1]]
+            except:
                 self.current_data_position[0] += 1
                 self.current_data_position[1] = 0
                 game_group = file['games'][f"game-{self.current_data_position[0]}"]
-            moves_played = self.current_game_moves_processed[0:self.current_data_position[1]]
-            scoreForWeight = game_group['averageElo'][()]
-            #legal_moves
+            print(self.current_moves_processed[0:self.current_data_position[1]])
+            moves_played = self.current_moves_processed[0:self.current_data_position[1]].decode('utf-8')
+
+            scoreForWeight = int(game_group.attrs['averageElo']) * (1 if int(game_group.attrs['whiteWon']) == 1 else 0.5) # <--- ADJUST THIS AFTER TESTING
+
             legal_moves = self.findLegalMove(moves_played)
-            #static_postions
-            static_positions = self.get_states(moves_played)
+            legal_moves = torch.tensor(legal_moves, dtype=torch.float32)
             
-        seq = self.encode_move(moves_played)
+            static_position = self.get_states(moves_played)
+            static_position = torch.tensor(static_position, dtype=torch.float32)
+            
+        seq = self.encode_moves(moves_played)
         self.current_data_position[1] += 1
-        return seq, static_positions, legal_moves, scoreForWeight, target
+        return seq, static_position, legal_moves, scoreForWeight, target
     
 class CHESSBot(nn.Module):
     def __init__(self): 
@@ -261,7 +286,6 @@ class CHESSBot(nn.Module):
 
         return x
     
-### CHECKPOINT FUNCTION add into training loop
 def save_checkpoint(model, optimizer, epoch, loss, path):
     torch.save({
         'epoch': epoch,
@@ -282,7 +306,7 @@ def load_checkpoint(model, optimizer, path):
 
 
 #DATASET
-pathToDataset = 'Dataset\original\lichess_db_standard_rated_2013-01.h5'
+pathToDataset = 'Dataset/lichess_db_standard_rated_2013-01_result_0_1.h5'
 
 dataset = ChessDataset(pathToDataset)
 
@@ -305,9 +329,11 @@ target = None
 epochs = 100
 
 def get_weights():
-    with h5py.File('Dataset\original\lichess_db_standard_rated_2013-01.h5', 'r') as file:
-        return file['sampleWeightGroup']['sampleWeight']
+    with h5py.File(pathToDataset, 'r') as file:
+        return file['sampleWeightGroup']['sampleWeight'][()]
+    
 weights = get_weights()
+weights = torch.tensor(weights, dtype=torch.float32).to(device)
 
 for epoch in range(epochs):  
     for batch in dataloader:

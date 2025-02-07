@@ -41,12 +41,11 @@ class ChessEngine():
                         if countGame % 10000 == 0:
                             print(f'Game {countGame} has been added')
                         countMoves += len_moves
-                        
-
+            print(f'Number of games: {countMoves}')
             file.attrs['numberOfGames'] = countGame
             file.attrs['numberOfMoves'] = countMoves
 
 Engine = ChessEngine()
-Engine.convert_to_h5py('Dataset/lichess_db_standard_rated_2017-01_result_0_1.csv', 'Dataset/lichess_db_standard_rated_2017-01.h5')
+Engine.convert_to_h5py('Dataset/lichess_db_standard_rated_2013-01_result_0_1.csv', 'Dataset/lichess_db_standard_rated_2013-01_result_0_1.h5')
 
 

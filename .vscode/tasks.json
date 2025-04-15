@@ -1,0 +1,14 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"type": "npm",
+			"script": "build",
+			"path": "venv/Lib/site-packages/jupyterlab/galata/@jupyterlab/galata-extension",
+			"group": "build",
+			"problemMatcher": [],
+			"label": "npm: build - venv/Lib/site-packages/jupyterlab/galata/@jupyterlab/galata-extension",
+			"detail": "npm run build:lib && npm run build:labextension"
+		}
+	]
+}

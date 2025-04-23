@@ -173,7 +173,7 @@ class ChessEngine():
         self.board_reset()
         for move in game:
             self.move(move)
-            arr.append(np.array(self.board))  # Convert to NumPy array to store a copy
+            arr.append(np.array(self.board)) 
         return np.array(arr)
     
     def encode_move(self, move):
@@ -246,12 +246,11 @@ class ChessDataset(Dataset, ChessEngine):
         
         
     def __getitem__(self, idx): 
-        print(f"idx: {idx}")
-        cumulative = 0  #counts games
+        cumulative = 0  
         for key in self.game_keys:
             game = self.map[key][0]
             scoreForWeight = self.map[key][1][0]
-            num_samples = len(game) - 1  # number of samples 
+            num_samples = len(game) - 1   
             if idx < cumulative + num_samples:
                 
                 local_sample_idx = idx - cumulative
@@ -349,13 +348,13 @@ def custom_collate(batch):
     """
     seq, static_position, legal_moves, scoreForWeight, target = zip(*batch)
     seq = pad_sequence(seq, batch_first=True, padding_value=0)
-    static_position = torch.tensor(np.stack(static_position).flatten(), dtype=torch.float32)
+    static_position = torch.tensor(np.stack(static_position), dtype=torch.float32)
     score = torch.tensor(np.stack(scoreForWeight), dtype=torch.float32)
     target = torch.tensor(np.stack(target).flatten(), dtype=torch.float32)
     return seq, static_position, legal_moves, score, target
 
 # Dataset and DataLoader
-pathToDataset = r"E:\Datasets\SOC\ChessPositions\lichess_db_2021-03.h5"
+pathToDataset = r"datasets\sample.h5"
 dataset = ChessDataset(pathToDataset, 10)
 dataloader = DataLoader(dataset, batch_size=10, shuffle=False, collate_fn=custom_collate) # Change to True for shuffling
 
@@ -381,7 +380,7 @@ for epoch in range(epochs):
     # Use enumerate to track the batch index
     for batch_idx, batch in enumerate(dataloader): ###ADD TARGET VALUES SOMEHOW
         seq, static_position, legal_moves, scoreForWeight, target = batch
-        
+        print("ShAPE: ", static_position.shape)
         
         seq = seq.to(device)
         static_position = static_position.to(device)

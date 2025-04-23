@@ -94,7 +94,7 @@ def pgn_to_dataframe(pgn_file, limit_count=5_000_000):
     pool.join()
 
 def main():
-    file = r'E:\Datasets\SOC\ChessPositions\lichess_db_standard_rated_2021-03\lichess_db_standard_rated_2021-03.pgn'
+    file = r'C:\Users\juraj\Documents\GitHub\ChessBotPanda\datasets\lichess_db_standard_rated_2013-01 (1).pgn'
     print(f"Processing file: {file}")
     file_name, _ = os.path.splitext(file)
     

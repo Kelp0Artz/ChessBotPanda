@@ -2,4 +2,5 @@ Dataset/
 venv/
 .env
 .ipynb_checkpoints/
+datasets/
 

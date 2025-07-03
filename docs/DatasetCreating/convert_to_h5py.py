@@ -59,5 +59,5 @@ class DatasetH5Creater():
 
         print(f'Saved {len(games_data)} games successfully!')
 converter = DatasetH5Creater()
-converter.convert_to_h5py(r"C:\Users\juraj\Documents\GitHub\ChessBotPanda\datasets\lichess_db_standard_rated_2013-01 (1)_result_0_1.csv", r"C:\Users\juraj\Documents\GitHub\ChessBotPanda\datasets\sample.h5")
+converter.convert_to_h5py(r"C:\Users\juraj\Documents\GitHub\ChessBotPanda\Dataset\lichess_db_standard_rated_2017-01_result_0_1.csv", r"C:\Users\juraj\Documents\GitHub\ChessBotPanda\Dataset\sample.h5")
 

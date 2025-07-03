@@ -1,6 +1,41 @@
-Dataset/
+# Ignore Python cache files abd IDE settings
+__pycache__/
+*.pyc
+*.pyo
+.vscode/
+
+# Ignore virtual environment directories
 venv/
 .env
-.ipynb_checkpoints/
-datasets/
 
+# Ignore secondary data directories
+dataset/lichess_db_standard_rated_2013-01.pgn
+dataset/lichess_db_standard_rated_2013-01.h5
+dataset/lichess_db_standard_rated_2013-01_result_0_1.csv
+
+# Ignore Jupyter Notebook 
+docs/blender_data_handling/blender_notebook.ipynb
+
+# Ignore experiment results and logs
+docs/BoardRecognitionArchitectures/experiment/
+
+# Ignore UNCOMPLITED ARCHITECTURES
+docs/BoardRecognitionArchitectures/BoardRecognitionAIv2.py
+
+# Ignore Testing files
+docs/DatasetCreating/sampleWeighting.
+docs/LegalMoves.ipynb
+docs/Untitled.ipynb
+docs/test.py
+docs/DatasetCreating/sampleWeighting.ipynb
+
+# Ignore data analysis files
+docs/Data_Analysis.ipynb
+
+# Ignore experiments and run files
+runs/
+experiment/
+
+dataset/
+experiments_logs/
+robotic_arm/GENERAL.md

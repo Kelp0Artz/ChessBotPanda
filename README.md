@@ -1,6 +1,7 @@
 # 🤖 ChessBotPANDA
 
 ChessBotPANDA was created as part of a personal challenge to win SOČ, a prestigious Slovak student research competition. It combines AI, robotics, and computer vision into a fully autonomous chess-playing system. The project is not only a technical showcase but also a step toward deeper research in real-time decision-making systems.
+This project was named after my best friend, Panda 🐼.
 
 ---
 
@@ -85,3 +86,7 @@ If you have any questions, suggestions or want to colaborate, feel free to reach
 - **Email:** juraj.orisko007@gmail.com
 - **Discord** Kelp0.py (with zero)
 - **LinkedIn:** *soon*
+
+# ChessBotPanda
+This project was named after my best friend, Panda 🐼.
+This repository mainly focuses on Open-sourcing my project, with wich I want to win a national competition.
